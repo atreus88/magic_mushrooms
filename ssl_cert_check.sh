@@ -1,0 +1,1 @@
+for host in `awk '/Host/{print$2}' new_certs.txt`;do echo "Checking Host:$host"; echo | openssl s_client -connect $host:443 2>&1 |sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | openssl x509 -noout -subject -dates -serial;done
