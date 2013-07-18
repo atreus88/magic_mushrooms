@@ -8,6 +8,38 @@ new_server_crt=/var/ops/ssl/new_ssl/server.crt
 new_intermediate_crt=/var/ops/ssl/new_ssl/rapidssl-ca.crt
 
 echo "Proposed new SSL files below. Usage: -f update -b revert to last SSL cert"
+conf_cert=`openssl x509 -in $configured_server_crt -text -noout | grep Subject | grep CN | cut -d " " -f 20 | sed 's/CN\=//g'`
+new_cert=`openssl x509 -in $new_server_crt -text -noout | grep Subject | grep CN | cut -d " " -f 20 | sed 's/CN\=//g'`
+if [ $conf_cert = $new_cert ]
+then
+echo "Good: Domain of replacement cert matchs existing cert"
+else
+echo "CRITICAL WARNING: configured cert $conf_cert domain does not match proposed cert $new_cert. Only proceed if you know what you are doing"
+fi
+sdate=`openssl x509 -in $new_server_crt -text -noout | grep "Not Before" | sed 's/^ *//g' | cut -d ':' -f2,3,4`
+edate=`openssl x509 -in $new_server_crt -text -noout | grep "Not After" | sed 's/^ *//g' | cut -d ':' -f2,3,4`
+sdate_cert=`echo "'$sdate'" | xargs date +%s -d`
+today=`date +%s`
+edate_cert=`echo "'$edate'" | xargs date +%s -d`
+if [ $today -lt $sdate_cert ]
+then
+echo "CRITICAL WARNING: the replacement SSL certificate is not valid yet. It will become valid on $sdate"
+elif [ $edate_cert -lt $today ]
+then
+echo "CRITICAL WARNING: the replacement SSL certificate is EXPIRED. It expired on $edate"
+else
+echo "Good: date for proposed certificate is valid"
+fi
+cert_mod=`openssl x509 -noout -modulus -in $new_server_crt | openssl md5`
+key_mod=`openssl rsa -noout -modulus -in $new_server_key | openssl md5`
+# req_mod=`openssl req -noout -modulus -in $new_server_csr | openssl md5` not necessary, but could be nice
+if [ $cert_mod = $key_mod ]
+then
+echo "Good: the modulas of the new server certificate matches the key. Valid pair."
+else
+echo "CRITICAL ERROR: the replacement SSL certificate private key and certificate do not match. FAIL"
+fi
+
 echo $new_server_key
 echo $new_server_crt
 echo $new_intermediate_crt
