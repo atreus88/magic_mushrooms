@@ -2,7 +2,7 @@
 MYHOST=`hostname -s | awk -F "-" {'print $1'}`
 configured_server_key=/var/ops/ssl/server.key
 configured_server_crt=/var/ops/ssl/server.crt
-configured_intermediate_crt=/var/ops/ssl/ca.crt/rapidssl-ca.crt
+configured_intermediate_crt=/var/ops/ssl/ca.crt/rapidssl-intermediate.crt
 new_server_key=/var/ops/ssl/new_ssl/server.key
 new_server_crt=/var/ops/ssl/new_ssl/server.crt
 new_intermediate_crt=/var/ops/ssl/new_ssl/rapidssl-ca.crt
@@ -55,7 +55,7 @@ do
     f) 
       if [[ -f $new_server_key && -f $new_server_crt && -f $new_intermediate_crt ]]
       then
-	 if [[ -f $configured_intermediate_crt && -f $configured_server_crt && -f $configured_intermediate_crt ]]
+	 if [[ -f $configured_server_key && -f $configured_server_crt && -f $configured_intermediate_crt ]]
 	 then
 	   echo "Backing up older certificates..."
            cp $configured_server_key /var/ops/ssl/old_ssl/server.key.`date +%F%S`
@@ -71,10 +71,35 @@ do
 	   #exit 0;;
 	else
 	   echo "ERROR: Configured certs in script do not exist"
+	   if [[ ! -f $configured_server_key ]]
+	   then
+	     echo "File $configured_server_key does not exist, please fix line #3 of this script"
+	   fi
+	   if [[ ! -f $configured_server_crt ]]
+	   then
+	     echo "File $configured_server_crt does not exist, please fix line #4 of this script"
+	   fi
+	   if [[ ! -f $configured_intermediate_crt ]]
+	   then
+	     echo "File $configured_intermediate_crt does not exist, please fix line #5 of this script"
+	   fi
 	   #exit 1;;
 	fi
       else
         echo "ERROR: Configured replacement certs in script do not exist"
+	if [[ ! -f $new_server_key ]]
+           then
+             echo "File $new_server_key does not exist, please fix line #6 of this script"
+         fi
+         if [[ ! -f $new_server_crt ]]
+         then
+           echo "File $new_server_crt does not exist, please fix line #7 of this script"
+         fi
+         if [[ ! -f $new_intermediate_crt ]]
+         then
+           echo "File $new_intermediate_crt does not exist, please fix line #8 of this script"
+         fi
+
         #exit 1;;
       fi	
       exit 0;;
