@@ -1,0 +1,12 @@
+root@sfo2-dev-vmdev049.sfo2.zoosk.com
+root@sfo2-dev-vmdev050.sfo2.zoosk.com
+root@sfo2-dev-vmdev051.sfo2.zoosk.com
+root@sfo2-dev-vmdev052.sfo2.zoosk.com
+root@sfo2-dev-vmdev053.sfo2.zoosk.com
+root@sfo2-dev-vmdev054.sfo2.zoosk.com
+root@sfo2-dev-vmdev055.sfo2.zoosk.com
+root@sfo2-dev-vmdev056.sfo2.zoosk.com
+root@sfo2-dev-vmdev057.sfo2.zoosk.com
+root@sfo2-dev-vmdev058.sfo2.zoosk.com
+root@sfo2-dev-vmdev059.sfo2.zoosk.com
+root@sfo2-dev-vmdev060.sfo2.zoosk.com

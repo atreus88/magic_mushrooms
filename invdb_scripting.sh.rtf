@@ -1,0 +1,64 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1265\cocoasubrtf210
+{\fonttbl\f0\fnil\fcharset0 Verdana;\f1\fnil\fcharset0 Monaco;\f2\fnil\fcharset0 Menlo-Regular;
+}
+{\colortbl;\red255\green255\blue255;\red0\green41\blue57;\red26\green26\blue26;\red255\green255\blue193;
+}
+\margl1440\margr1440\vieww28300\viewh14640\viewkind0
+\deftab720
+\pard\pardeftab720
+
+\f0\fs28 \cf0 lvextend -l +100%FREE /dev/vgroot/lv_srv && resize2fs /dev/mapper/vgroot-lv_srv && df -h /srv\
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural
+\cf2 \CocoaLigature0 count=0;mysql -N --select_limit=5000  -u inventory -pinventory -h $HOST -D inventory -e "select hostname from servers where hostname rlike 'sea-z-app03' and hostname not rlike 'sea-z-app035'" -B | cut -d '.' -f1 | awk \{'printf"%s-bmc\\n",$1'\} | while read server; do count=$((count + 1)); echo "$count: $server"; powercycle $server; done\
+\
+\
+mysql -N --select_limit=5000  -u inventory -pinventory -h opsdbwprod -D inventory -e "select hostname,eth0_ip from servers where hostname rlike 'sea-z-app03' and hostname not rlike 'sea-z-app035' and hostname not rlike 'sea-z-app030'" -B | sed 's/.sea.zoosk.com\\t/ /g' | while read -r server ip ; do ops-bin/add-iclassify-host.rb -h $server -d sea.zoosk.com -i $ip; done\
+\
+\
+indexnum=41; mysql -N --select_limit=5000  -u inventory -pinventory -h opsdbwprod -D inventory -e "select id from servers where model rlike 'C6220-4' and environment='unassigned' and comment is null and cage='a03' and eth1_mac is not null" -B | while read -r idnum; do echo "update servers set hostname='sea-z-app0$\{indexnum\}.sea.zoosk.com\'92, default_boot='centos-6.4-x86_64', environment='production' where id=$idnum;"; indexnum=$((indexnum+1));done\
+\
+indexnum=1; mysql -N --select_limit=5000  -u inventory -pinventory -h opsdbwprod -D inventory -e "select id from servers where id=1429 or id=1531" -B| while read -r idnum; do echo "update servers set hostname='sea-z-upload00$\{indexnum\}', default_boot='centos-6.4-x86_64', environment='production' where id=$idnum;"; indexnum=$((indexnum+1));done\
+\
+for i in `cat app174-202.txt`; do echo $i;ssh -o StrictHostKeyChecking=no root@$i "shutdown -h now";sleep 10; done\
+\
+diff -y <(ssh sea-z-worker001 ls /etc/cron.d | sort) <(ssh sea-z-app001 ls /etc/cron.d | sort)\
+\
+for i in `cat worker_hosts`; do echo $i; ssh -o StrictHostKeyChecking=no root@$i php /srv/zoosk/current/web/scripts/examiner.php | grep -v Success; done\
+\
+initctl list | grep -v start | grep zoosk | cut -d ' ' -f1 | while read -r service; do initctl start $service N=1; done\
+\
+initctl list | grep start | grep zoosk | cut -d ' ' -f1 | while read -r service; do initctl stop $service N=1; done\
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural
+
+\f1 \cf2 diff --suppress-common-lines -y <(ssh sea-z-worker001 cat /etc/php-cli.ini) <(ssh worker47prod cat /etc/php5/cli/php.ini)\
+\
+rm -f master_zoosk_worker_badgejobworker.conf master_zoosk_worker_bebojobsworker.conf master_zoosk_worker_friendsterworker.conf master_zoosk_worker_hi5jobsworker.conf master_zoosk_worker_myspacejobsworker.conf master_zoosk_worker_taggedworker.conf zoosk_worker_badgejobworker.conf zoosk_worker_bebojobsworker.conf zoosk_worker_friendsterworker.conf zoosk_worker_hi5jobsworker.conf zoosk_worker_myspacejobsworker.conf zoosk_worker_taggedworker.conf\
+\
+index=2; while (( $index < 11 )); do if (( $index >= 10 )); then ssh sea-z-worker0$\{index\} hostname|tr -d "\\n";echo -n ": ";date; else ssh sea-z-worker00$\{index\} hostname|tr -d "\\n";echo -n ": ";date; fi; (( index+=1 )); done\
+\
+index=2; while (( $index < 11 )); do if (( $index >= 10 )); then ssh sea-z-worker0$\{index\} hostname|tr -d "\\n";echo -n ": ";ps -ef | grep splunk | wc -l; else ssh sea-z-worker00$\{index\} hostname|tr -d "\\n";echo -n ": ";ps -ef | grep splunk | wc -l; fi; (( index+=1 )); done\
+\
+\
+history | grep rm | head -1 | sed 's/rm -f//g' | tr " " "\\n" | tail -12 | sed 's/.conf//g' | grep master | while read -r service; do initctl stop $service; done\
+\
+index=1; while (( $index < 11 )); do if (( $index >= 10 )); then ssh sea-z-worker0$\{index\} hostname|tr -d "\\n";echo -n ": "; ps -ef | grep discount; else ssh sea-z-worker00$\{index\} hostname|tr -d "\\n";echo -n ": ";ps -ef | grep discount; fi; (( index+=1 )); done\
+\
+#Below example assumes accts.txt is same structure as /etc/passwd\
+cat accts.txt | while read -r acct; do echo $acct | cut -d ':' -f1 | xargs id $1 > /dev/null 2>&1 || useradd -u `echo $acct | cut -d ':' -f3` -G wheel `echo $acct | cut -d ':' -f1`;  done\
+\
+for host in `echo worker41prod worker42prod worker47prod` ; do echo ------------$host-----------;ssh $host "/etc/init.d/newrelic-ademon stop; /etc/init.d/newrelic-sysmond stop"; done\
+\
+a=0;initctl list | grep master | grep start | cut -d ' ' -f1 | while read -r process; do initctl stop $process; (( a+=1 )); if [ $(($a % 5)) == 0 ]; then sleep 180; fi;\
+\
+\pard\pardeftab720
+
+\f2 \cf3 \cb4 \CocoaLigature1 ps\cb1  -ef | grep php | grep -v timeout | awk '\{print $9\}' | sort |uniq -c\
+\
+\pard\pardeftab720
+
+\f1 \cf2 invdb "select bmc_ip from servers where colo = 'sjc';" | grep -v NULL | while read -r X ; do echo $\{X\} $(timeout 5 ~danielh/bin/ipowerstatus $\{X\}) ; done ;\
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural
+\cf2 \CocoaLigature0 for i in \{6..8\}; do echo -n $i;ssh sjc-z-upload00$\{i\} uptime; done}
